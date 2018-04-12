@@ -109,7 +109,7 @@ public class DeterministicKeyChainTest {
         }
 
         public AccountOneChain(KeyCrypter crypter, DeterministicSeed seed) {
-            super(seed, crypter);
+            super(seed, crypter,null);
         }
 
         @Override
@@ -132,14 +132,15 @@ public class DeterministicKeyChainTest {
         List<Protos.Key> keys = chain1.serializeToProtobuf();
         KeyChainFactory factory = new KeyChainFactory() {
             @Override
-            public DeterministicKeyChain makeKeyChain(Protos.Key key, Protos.Key firstSubKey, DeterministicSeed seed, KeyCrypter crypter, boolean isMarried) {
+            public DeterministicKeyChain makeKeyChain(Protos.Key key, Protos.Key firstSubKey, DeterministicSeed seed, KeyCrypter crypter, boolean isMarried, ImmutableList<ChildNumber> accountPath) {
                 return new AccountOneChain(crypter, seed);
             }
 
             @Override
-            public DeterministicKeyChain makeWatchingKeyChain(Protos.Key key, Protos.Key firstSubKey, DeterministicKey accountKey, boolean isFollowingKey, boolean isMarried) {
+            public DeterministicKeyChain makeWatchingKeyChain(Protos.Key key, Protos.Key firstSubKey, DeterministicKey accountKey, boolean isFollowingKey, boolean isMarried, ImmutableList<ChildNumber> accountPath) throws UnreadableWalletException {
                 throw new UnsupportedOperationException();
             }
+
         };
 
         chain1 = DeterministicKeyChain.fromProtobuf(keys, null, factory).get(0);

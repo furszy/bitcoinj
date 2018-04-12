@@ -271,6 +271,10 @@ public class Wallet extends BaseTaggableObject
         return new Wallet(params, new KeyChainGroup(params, seed));
     }
 
+    public static Wallet fromSeed(NetworkParameters params, DeterministicSeed seed, ImmutableList<ChildNumber> accountPath) {
+        return new Wallet(params, new KeyChainGroup(params, seed,accountPath));
+    }
+
     /**
      * Creates a wallet that tracks payments to and from the HD key hierarchy rooted by the given watching key. A
      * watching key corresponds to account zero in the recommended BIP32 key hierarchy.

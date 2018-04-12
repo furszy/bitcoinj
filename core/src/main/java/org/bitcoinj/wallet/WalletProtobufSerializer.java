@@ -19,6 +19,8 @@ package org.bitcoinj.wallet;
 
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.TransactionConfidence.ConfidenceType;
+import org.bitcoinj.crypto.ChildNumber;
+import org.bitcoinj.crypto.HDUtils;
 import org.bitcoinj.crypto.KeyCrypter;
 import org.bitcoinj.crypto.KeyCrypterScrypt;
 import org.bitcoinj.script.Script;
@@ -462,6 +464,9 @@ public class WalletProtobufSerializer {
             throw new UnreadableWalletException.FutureVersion();
         if (!walletProto.getNetworkIdentifier().equals(params.getId()))
             throw new UnreadableWalletException.WrongNetwork();
+
+        // Derivation path
+        //List<ChildNumber> derivationPath =
 
         // Read the scrypt parameters that specify how encryption and decryption is performed.
         KeyChainGroup keyChainGroup;

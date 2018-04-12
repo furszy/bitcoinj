@@ -23,6 +23,8 @@
  * - To regenerate after editing, run: mvn generate-sources -DupdateProtobuf
  */
 
+
+
 package wallet;
 
 option java_package = "org.bitcoinj.wallet";
@@ -132,6 +134,9 @@ message Key {
 
   // Encrypted version of the seed
   optional EncryptedData encrypted_deterministic_seed = 9;
+
+  // The path to the root. Only applicable to a DETERMINISTIC_MNEMONIC key entry.
+  repeated uint32 account_path = 10 [packed = true];
 }
 
 message Script {

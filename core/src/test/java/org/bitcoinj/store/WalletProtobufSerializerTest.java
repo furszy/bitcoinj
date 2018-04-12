@@ -341,6 +341,7 @@ public class WalletProtobufSerializerTest {
 
     @Test
     public void testRoundTripMarriedWallet() throws Exception {
+
         // create 2-of-2 married wallet
         myWallet = new Wallet(PARAMS);
         final DeterministicKeyChain partnerChain = new DeterministicKeyChain(new SecureRandom());

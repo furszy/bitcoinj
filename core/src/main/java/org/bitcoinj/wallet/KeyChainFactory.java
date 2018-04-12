@@ -16,6 +16,8 @@
 
 package org.bitcoinj.wallet;
 
+import com.google.common.collect.ImmutableList;
+import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.crypto.KeyCrypter;
 
@@ -32,7 +34,7 @@ public interface KeyChainFactory {
      * @param crypter the encrypted/decrypter
      * @param isMarried whether the keychain is leading in a marriage
      */
-    DeterministicKeyChain makeKeyChain(Protos.Key key, Protos.Key firstSubKey, DeterministicSeed seed, KeyCrypter crypter, boolean isMarried);
+    DeterministicKeyChain makeKeyChain(Protos.Key key, Protos.Key firstSubKey, DeterministicSeed seed, KeyCrypter crypter, boolean isMarried, ImmutableList<ChildNumber> accountPath);
 
     /**
      * Make a watching keychain.
@@ -45,5 +47,5 @@ public interface KeyChainFactory {
      * @param isFollowingKey whether the keychain is following in a marriage
      * @param isMarried whether the keychain is leading in a marriage
      */
-    DeterministicKeyChain makeWatchingKeyChain(Protos.Key key, Protos.Key firstSubKey, DeterministicKey accountKey, boolean isFollowingKey, boolean isMarried) throws UnreadableWalletException;
+    DeterministicKeyChain makeWatchingKeyChain(Protos.Key key, Protos.Key firstSubKey, DeterministicKey accountKey, boolean isFollowingKey, boolean isMarried, ImmutableList<ChildNumber> accountPath) throws UnreadableWalletException;
 }

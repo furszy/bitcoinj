@@ -84,6 +84,10 @@ public class KeyChainGroup implements KeyBag {
         this(params, null, ImmutableList.of(new DeterministicKeyChain(seed)), null, null);
     }
 
+    public KeyChainGroup(NetworkParameters params, DeterministicSeed seed, ImmutableList<ChildNumber> accountPath) {
+        this(params, (BasicKeyChain)null, ImmutableList.of(new DeterministicKeyChain(seed, accountPath)), (EnumMap)null, (KeyCrypter)null);
+    }
+
     /**
      * Creates a keychain group with no basic chain, and an HD chain that is watching the given watching key.
      * This HAS to be an account key as returned by {@link DeterministicKeyChain#getWatchingKey()}.
@@ -645,7 +649,7 @@ public class KeyChainGroup implements KeyBag {
 
     public static KeyChainGroup fromProtobufUnencrypted(NetworkParameters params, List<Protos.Key> keys, KeyChainFactory factory) throws UnreadableWalletException {
         BasicKeyChain basicKeyChain = BasicKeyChain.fromProtobufUnencrypted(keys);
-        List<DeterministicKeyChain> chains = DeterministicKeyChain.fromProtobuf(keys, null, factory);
+        List<DeterministicKeyChain> chains = DeterministicKeyChain.fromProtobuf(keys, null,factory);
         EnumMap<KeyChain.KeyPurpose, DeterministicKey> currentKeys = null;
         if (!chains.isEmpty())
             currentKeys = createCurrentKeysMap(chains);

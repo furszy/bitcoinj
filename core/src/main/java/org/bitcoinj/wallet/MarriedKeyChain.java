@@ -24,6 +24,7 @@ import org.bitcoinj.core.BloomFilter;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Utils;
+import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.crypto.KeyCrypter;
 import org.bitcoinj.script.Script;
@@ -122,8 +123,8 @@ public class MarriedKeyChain extends DeterministicKeyChain {
         super(accountKey, false);
     }
 
-    MarriedKeyChain(DeterministicSeed seed, KeyCrypter crypter) {
-        super(seed, crypter);
+    MarriedKeyChain(DeterministicSeed seed, KeyCrypter crypter, ImmutableList<ChildNumber> accountPath) {
+        super(seed, crypter,accountPath);
     }
 
     // Builder constructors

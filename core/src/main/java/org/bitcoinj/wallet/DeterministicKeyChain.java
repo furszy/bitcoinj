@@ -105,6 +105,9 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
     @Nullable private DeterministicKey rootKey;
     @Nullable private DeterministicSeed seed;
 
+    @Nullable
+    private ImmutableList<ChildNumber> accountPath;
+
     // Paths through the key tree. External keys are ones that are communicated to other parties. Internal keys are
     // keys created for change addresses, coinbases, mixing, etc - anything that isn't communicated. The distinction
     // is somewhat arbitrary but can be useful for audits. The first number is the "account number" but we don't use
@@ -310,6 +313,14 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
     }
 
     /**
+     * Creates a deterministic key chain starting from the given seed. All keys yielded by this chain will be the same
+     * if the starting seed is the same.
+     */
+    protected DeterministicKeyChain(DeterministicSeed seed, ImmutableList<ChildNumber> accountPath) {
+        this(seed, null,accountPath);
+    }
+
+    /**
      * Creates a deterministic key chain that watches the given (public only) root key. You can use this to calculate
      * balances and generally follow along, but spending is not possible with such a chain. Currently you can't use
      * this method to watch an arbitrary fragment of some other tree, this limitation may be removed in future.
@@ -354,8 +365,9 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
     /**
      * For use in {@link KeyChainFactory} during deserialization.
      */
-    protected DeterministicKeyChain(DeterministicSeed seed, @Nullable KeyCrypter crypter) {
+    protected DeterministicKeyChain(DeterministicSeed seed, @Nullable KeyCrypter crypter, ImmutableList<ChildNumber> accountPath) {
         this.seed = seed;
+        this.accountPath = accountPath;
         basicKeyChain = new BasicKeyChain(crypter);
         if (!seed.isEncrypted()) {
             rootKey = HDKeyDerivation.createMasterPrivateKey(checkNotNull(seed.getSeedBytes()));
@@ -420,6 +432,8 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
 
     /** Override in subclasses to use a different account derivation path */
     protected ImmutableList<ChildNumber> getAccountPath() {
+        if( accountPath != null)
+            return accountPath;
         return ACCOUNT_ZERO_PATH;
     }
 
@@ -732,6 +746,9 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
             Protos.Key.Builder mnemonicEntry = BasicKeyChain.serializeEncryptableItem(seed);
             mnemonicEntry.setType(Protos.Key.Type.DETERMINISTIC_MNEMONIC);
             serializeSeedEncryptableItem(seed, mnemonicEntry);
+            for (ChildNumber childNumber : getAccountPath()) {
+                mnemonicEntry.addAccountPath(childNumber.i());
+            }
             entries.add(mnemonicEntry.build());
         }
         Map<ECKey, Protos.Key.Builder> keys = basicKeyChain.serializeToEditableProtobufs();
@@ -773,7 +790,12 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
      * Returns all the key chains found in the given list of keys. Typically there will only be one, but in the case of
      * key rotation it can happen that there are multiple chains found.
      */
-    public static List<DeterministicKeyChain> fromProtobuf(List<Protos.Key> keys, @Nullable KeyCrypter crypter, KeyChainFactory factory) throws UnreadableWalletException {
+    public static List<DeterministicKeyChain> fromProtobuf(
+            List<Protos.Key> keys,
+            @Nullable KeyCrypter crypter,
+            KeyChainFactory factory
+    ) throws UnreadableWalletException {
+
         List<DeterministicKeyChain> chains = newLinkedList();
         DeterministicSeed seed = null;
         DeterministicKeyChain chain = null;
@@ -781,11 +803,19 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
         int lookaheadSize = -1;
         int sigsRequiredToSpend = 1;
 
+        List<ChildNumber> accountPath = newArrayList();
         PeekingIterator<Protos.Key> iter = Iterators.peekingIterator(keys.iterator());
         while (iter.hasNext()) {
             Protos.Key key = iter.next();
             final Protos.Key.Type t = key.getType();
             if (t == Protos.Key.Type.DETERMINISTIC_MNEMONIC) {
+                if (accountPath.isEmpty()) {
+                    for (int i : key.getAccountPathList()) {
+                        accountPath.add(new ChildNumber(i));
+                    }
+                    if (accountPath.isEmpty())
+                        accountPath = ACCOUNT_ZERO_PATH;
+                }
                 if (chain != null) {
                     checkState(lookaheadSize >= 0);
                     chain.setLookaheadSize(lookaheadSize);
@@ -855,10 +885,10 @@ public class DeterministicKeyChain implements EncryptableKeyChain {
                     if (seed == null) {
                         DeterministicKey accountKey = new DeterministicKey(immutablePath, chainCode, pubkey, null, null);
                         accountKey.setCreationTimeSeconds(key.getCreationTimestamp() / 1000);
-                        chain = factory.makeWatchingKeyChain(key, iter.peek(), accountKey, isFollowingKey, isMarried);
+                        chain = factory.makeWatchingKeyChain(key, iter.peek(), accountKey, isFollowingKey, isMarried, null);
                         isWatchingAccountKey = true;
                     } else {
-                        chain = factory.makeKeyChain(key, iter.peek(), seed, crypter, isMarried);
+                        chain = factory.makeKeyChain(key, iter.peek(), seed, crypter, isMarried,ImmutableList.copyOf(accountPath));
                         chain.lookaheadSize = LAZY_CALCULATE_LOOKAHEAD;
                         // If the seed is encrypted, then the chain is incomplete at this point. However, we will load
                         // it up below as we parse in the keys. We just need to check at the end that we've loaded
